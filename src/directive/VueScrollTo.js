@@ -25,6 +25,9 @@ class VueScrollTo {
   // 高亮类名
   static HIGHLIGHTNAME = "active";
 
+  // 延时时间
+  static TIMER_DELAY = 800;
+
   static calculatePercentage(numerator, denominator) {
     // 处理分母为0的情况
     if (denominator === 0) {
@@ -101,8 +104,13 @@ class VueScrollTo {
     this.bindElMap = new Map();
     // 子导航栏与父级导航栏之间的映射
     this.parentNavMap = new Map();
+
+    this.timer = null;
+
     // // 观察者
     // this.observerList = new Set();
+    // 锁
+    // this.locked = false;
   }
 
 
@@ -232,42 +240,10 @@ class VueScrollTo {
 
     this.scrollFn = scrollFn;
 
-    this.scrollRoot.addEventListener("scroll", scrollFn, false);
+    this.scrollRoot.addEventListener("scroll", this.scrollFn, false);
   }
-
-
-  scrollFn() {
-    // 对应的导航元素
-    let highLightNavEl = null;
-    // 滚动容器滚动的距离
-    const scrollTop = this.scrollRoot.scrollTop;
-    // 滑动的距离占据容器高度最大高度百分比
-    // top的偏移度距离占据容器高度最大百分比
-    const offsetHeight = this.scrollRoot.scrollHeight;
-
-
-    // 获取容器最大滚动距离
-    // 当前元素相对的top占据最大滑动距离的百分比
-    // 现在滑动的距离占据最大滑动距离的百分比
-
-    const scrollHeight = this.scrollRoot.scrollHeight - this.options.offsetTop;
-    const maxScrollTop = this.scrollRoot.scrollHeight - this.scrollRoot.offsetHeight;
-
-    const rate = VueScrollTo.calculatePercentage(scrollTop, maxScrollTop);
-    
-    for (const [el, section] of this.anchorSectionGapMap.entries()) {
-      if (rate >= section.rate[0] && rate < section.rate[1]) {
-        highLightNavEl = el;
-        break;
-      }
-    }
-
-    highLightNavEl && this.updateCurrentNav(highLightNavEl);
-  }
-
 
   scrollViewScrollHandle() {
-    
     // 对应的导航元素
     let highLightNavEl = null;
     // 滚动容器滚动的距离
@@ -297,22 +273,41 @@ class VueScrollTo {
     
   }
 
+  clearEventListener() {
+    this.scrollRoot.removeEventListener("scroll", this.scrollFn);
+  }
+
+
+  // 滚动的效果没有结束end 开启了滚动监听事件
 
   sliderAnchorSectionPositionHandle(el, position) {
-    this.scrollRoot.removeEventListener("scroll", this.scrollFn);
-
+    // 清除监听事件
+    this.clearEventListener();
+    
     // 滚动视口
     this.scrollRoot.scrollTo({
       left: 0,
       top: position.top,
       behavior: 'smooth'
     });
-    
+
     // 更新试图
     this.updateCurrentNav(el);
 
-    // 重新监听
-    setTimeout(() => this.bindViewScrollEvent(), 800);
+    // 处理用户过快点击导致对应不上高亮位置
+    this.debounceClickNav();
+  }
+
+  debounceClickNav() {
+    // 定时器
+    if (this.timer !== null) {
+      clearTimeout(this.timer);
+    } else {
+      this.timer = setTimeout(() => {
+        this.bindViewScrollEvent();
+        this.timer = null;
+      }, VueScrollTo.TIMER_DELAY);
+    }
   }
 
 
