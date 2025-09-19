@@ -9,6 +9,9 @@
  * notice: 观察者方案处理滚动导航栏高亮不可行
  * 
  * 
+ * // 卸载没写
+ * 
+ * 
  * 
  */
 
@@ -143,7 +146,7 @@ class VueScrollTo {
     // 通过Intersection建立起观察者的模式
     // this.bindScrollEvent();
     // this.intersectionObserverInit();
-    console.log('this: =>,', this.anchorSectionGapMap);
+    // console.log('this: =>,', this.anchorSectionGapMap);
     
     
   }
